@@ -1,0 +1,207 @@
+{
+ "actions": [],
+ "autoname": "EF-.#####",
+ "creation": "2017-06-08 14:43:21.865033",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "kategori",
+  "s_1",
+  "date_from",
+  "cb_1",
+  "date_to",
+  "s_2",
+  "get_data",
+  "section_break_8",
+  "check_all",
+  "column_break_10",
+  "uncheck_all",
+  "section_break_12",
+  "s_3",
+  "get_data_pajak_masukan",
+  "s_4",
+  "get_data_pajak_keluaran",
+  "s_5",
+  "get_data_retur_masukan",
+  "s_6",
+  "get_data_retur_keluaran",
+  "s_7",
+  "print_to_excel",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "kategori",
+   "fieldtype": "Select",
+   "label": "Kategori",
+   "options": "Faktur Pajak Masukan\nFaktur Pajak Keluaran\nFaktur Pajak Retur Masukan\nFaktur Pajak Retur Keluaran\nPENJUALAN"
+  },
+  {
+   "fieldname": "s_1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "date_from",
+   "fieldtype": "Date",
+   "label": "Date From"
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "date_to",
+   "fieldtype": "Date",
+   "label": "Date To"
+  },
+  {
+   "fieldname": "s_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "get_data",
+   "fieldtype": "Button",
+   "label": "Get Data",
+   "options": "get_data"
+  },
+  {
+   "fieldname": "section_break_8",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "check_all",
+   "fieldtype": "Button",
+   "label": "Check All",
+   "options": "checkall"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "uncheck_all",
+   "fieldtype": "Button",
+   "label": "Uncheck All",
+   "options": "uncheckall"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.kategori == \"Faktur Pajak Masukan\"",
+   "fieldname": "s_3",
+   "fieldtype": "Section Break",
+   "label": "Data Pajak Masukan"
+  },
+  {
+   "depends_on": "eval:doc.kategori == \"Faktur Pajak Masukan\"",
+   "fieldname": "get_data_pajak_masukan",
+   "fieldtype": "Table",
+   "label": "Data Pajak Masukan",
+   "options": "Get Data Pajak Masukan"
+  },
+  {
+   "depends_on": "eval:doc.kategori== \"PENJUALAN\"",
+   "fieldname": "s_4",
+   "fieldtype": "Section Break",
+   "label": "Data Pajak Keluaran"
+  },
+  {
+   "depends_on": "eval:doc.kategori== \"PENJUALAN\"",
+   "fieldname": "get_data_pajak_keluaran",
+   "fieldtype": "Table",
+   "label": "Data Pajak Keluaran",
+   "options": "Get Data Pajak Keluaran"
+  },
+  {
+   "depends_on": "eval:doc.kategori == \"Faktur Pajak Retur Masukan\"",
+   "fieldname": "s_5",
+   "fieldtype": "Section Break",
+   "label": "Data Retur Masukan"
+  },
+  {
+   "depends_on": "eval:doc.kategori == \"Faktur Pajak Retur Masukan\"",
+   "fieldname": "get_data_retur_masukan",
+   "fieldtype": "Table",
+   "label": "Data Retur Masukan",
+   "options": "Get Data Retur Masukan"
+  },
+  {
+   "depends_on": "eval:doc.kategori == \"Faktur Pajak Retur Keluaran\"",
+   "fieldname": "s_6",
+   "fieldtype": "Section Break",
+   "label": "Data Retur Keluaran"
+  },
+  {
+   "depends_on": "eval:doc.kategori == \"Faktur Pajak Retur Keluaran\"",
+   "fieldname": "get_data_retur_keluaran",
+   "fieldtype": "Table",
+   "label": "Data Retur Keluaran",
+   "options": "Get Data Retur Keluaran"
+  },
+  {
+   "fieldname": "s_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "print_to_excel",
+   "fieldtype": "Button",
+   "label": "Export",
+   "options": "print_to_excel"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "EFilling Tool",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2022-01-27 14:43:00.750574",
+ "modified_by": "Administrator",
+ "module": "Tax",
+ "name": "EFilling Tool",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Faktur Pajak",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
