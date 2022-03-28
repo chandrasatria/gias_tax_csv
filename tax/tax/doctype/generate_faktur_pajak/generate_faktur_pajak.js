@@ -3,6 +3,6 @@
 
 frappe.ui.form.on('Generate Faktur Pajak', {
 	refresh: function(frm) {
-
+		frm.disable_save()
 	}
 });

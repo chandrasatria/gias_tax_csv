@@ -85,7 +85,9 @@ class GenerateFakturPajak(Document):
 				pr_doc.update({
 					"no_faktur": final_temp,
 					"is_used": 0,
-					"tahun_penggunaan": self.tahun_penggunaan
+					"tahun_penggunaan": self.tahun_penggunaan,
+					"nomor_surat":self.nomor_surat,
+					"tanggal":self.tanggal
 				})
 
 				pr_doc.flags.ignore_permissions = 1

@@ -35,7 +35,7 @@
    "fieldname": "kategori",
    "fieldtype": "Select",
    "label": "Kategori",
-   "options": "Faktur Pajak Masukan\nFaktur Pajak Keluaran\nFaktur Pajak Retur Masukan\nFaktur Pajak Retur Keluaran\nPENJUALAN"
+   "options": "PENJUALAN\nPEMBELIAN\nRETUR PENJUALAN\nRETUR PEMBELIAN"
   },
   {
    "fieldname": "s_1",
@@ -91,13 +91,13 @@
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval:doc.kategori == \"Faktur Pajak Masukan\"",
+   "depends_on": "eval:doc.kategori == \"PEMBELIAN\"",
    "fieldname": "s_3",
    "fieldtype": "Section Break",
    "label": "Data Pajak Masukan"
   },
   {
-   "depends_on": "eval:doc.kategori == \"Faktur Pajak Masukan\"",
+   "depends_on": "eval:doc.kategori == \"PEMBELIAN\"",
    "fieldname": "get_data_pajak_masukan",
    "fieldtype": "Table",
    "label": "Data Pajak Masukan",
@@ -117,26 +117,26 @@
    "options": "Get Data Pajak Keluaran"
   },
   {
-   "depends_on": "eval:doc.kategori == \"Faktur Pajak Retur Masukan\"",
+   "depends_on": "eval:doc.kategori == \"RETUR PEMBELIAN\"",
    "fieldname": "s_5",
    "fieldtype": "Section Break",
    "label": "Data Retur Masukan"
   },
   {
-   "depends_on": "eval:doc.kategori == \"Faktur Pajak Retur Masukan\"",
+   "depends_on": "eval:doc.kategori == \"RETUR PEMBELIAN\"",
    "fieldname": "get_data_retur_masukan",
    "fieldtype": "Table",
    "label": "Data Retur Masukan",
    "options": "Get Data Retur Masukan"
   },
   {
-   "depends_on": "eval:doc.kategori == \"Faktur Pajak Retur Keluaran\"",
+   "depends_on": "eval:doc.kategori == \"RETUR PENJUALAN\"",
    "fieldname": "s_6",
    "fieldtype": "Section Break",
    "label": "Data Retur Keluaran"
   },
   {
-   "depends_on": "eval:doc.kategori == \"Faktur Pajak Retur Keluaran\"",
+   "depends_on": "eval:doc.kategori == \"RETUR PENJUALAN\"",
    "fieldname": "get_data_retur_keluaran",
    "fieldtype": "Table",
    "label": "Data Retur Keluaran",
@@ -165,7 +165,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-01-27 14:43:00.750574",
+ "modified": "2022-02-09 12:07:55.669078",
  "modified_by": "Administrator",
  "module": "Tax",
  "name": "EFilling Tool",

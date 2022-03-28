@@ -18,10 +18,10 @@ class EFillingTool(Document):
 
 	@frappe.whitelist()
 	def get_csv(self):
-		if self.kategori == "Faktur Pajak Masukan" :
+		if self.kategori == "PEMBELIAN" :
 			
 			item_list=[" "]
-			item_list.append(['FM', 'KD_JENIS_TRANSAKSI', 'FG_PENGGANTI', 'NOMOR_FAKTUR', 'MASA_PAJAK','TAHUN_PAJAK', 'TANGGAL_FAKTUR', 'NPWP','NAMA','ALAMAT_LENGKAP','JUMLAH_DPP','JUMLAH_PPN','JUMLAH_PPNBM','IS_CREDITABLE','REFERENSI'])
+			item_list.append(['FM', 'KD_JENIS_TRANSAKSI', 'FG_PENGGANTI', 'NOMOR_FAKTUR', 'MASA_PAJAK','TAHUN_PAJAK', 'TANGGAL_FAKTUR', 'NPWP','NAMA','ALAMAT_LENGKAP','JUMLAH_DPP','JUMLAH_PPN','JUMLAH_PPNBM','IS_CREDITABLE'])
 			
 			check = 0 
 			for i in self.get_data_pajak_masukan :
@@ -31,7 +31,7 @@ class EFillingTool(Document):
 			if(check==1) : 
 				for a in self.get_data_pajak_masukan :
 					if(a.check==1) :
-							item_list.append([str(a.fm),str(a.kd_jenis_transaksi),str(a.fg_pengganti),str(a.nomor_faktur),str(a.masa_pajak),str(a.tahun_pajak),str(a.tanggal_faktur),str(a.npwp),str(a.nama),a.alamat_lengkap,str(a.jumlah_dpp),str(a.jumlah_ppn),str(a.jumlah_ppnbm),str(a.is_creditable),str(a.referensi)])
+							item_list.append([str(a.fm),str(a.kd_jenis_transaksi),str(a.fg_pengganti),str(a.nomor_faktur),str(a.masa_pajak),str(a.tahun_pajak),str(a.tanggal_faktur),str(a.npwp),str(a.nama),a.alamat_lengkap,str(a.jumlah_dpp),str(a.jumlah_ppn),str(a.jumlah_ppnbm),str(a.is_creditable)])
 				
 			return item_list
 
@@ -111,9 +111,10 @@ class EFillingTool(Document):
 								ifnull(sinvi.`rate`, 0) as rate,
 								((sinvi.`price_list_rate` - sinvi.`rate`) * sinvi.`qty`) as discount,
 								sinvi.`qty`,
-								sinvi.`amount` as amount,
-								sinvi.discount_amount,
-								sinvi.prorate_discount
+								sinvi.`net_amount` as amount,
+								IFNULL(sinvi.discount_amount,0),
+								IFNULL(sinvi.prorate_discount,0),
+								ifnull(sinvi.`net_rate`, 0) as net_rate
 
 								FROM `tabSales Invoice Item` sinvi
 								WHERE sinvi.`parent` = "{}" 
@@ -127,36 +128,44 @@ class EFillingTool(Document):
 								ifnull(sinvi.`rate`, 0) as rate,
 								((sinvi.`price_list_rate` - sinvi.`rate`) * sinvi.`qty`) as discount,
 								sinvi.`qty`,
-								sinvi.`amount` as amount,
-								sinvi.discount_amount,
-								sinvi.prorate_discount
+								sinvi.`net_amount` as amount,
+								IFNULL(sinvi.discount_amount,0),
+								IFNULL(sinvi.prorate_discount,0),
+								ifnull(sinvi.`net_rate`, 0) as net_rate
 
 								FROM `tabSales Invoice Item` sinvi
 								WHERE sinvi.`parent` = "{}" 
 							""".format(a.referensi),as_list=1)
 
+						ambil_rate = frappe.db.sql(""" 
+
+							SELECT stt.name, stt.rate FROM `tabSales Taxes and Charges` stt
+							WHERE stt.`parent` = "{}"
+							AND stt.`rate` > 0
+
+						""".format(a.referensi),as_list=1)
+
+						tax = 10
+						if ambil_rate:
+							tax = ambil_rate[0][1]
+
 						if anak:
 							for i in anak:
+
+
 								kode_object = str(i[0])
 								nama_item = str(i[1])
 
 								harga_satuan, harga_total, diskon, tarif_ppnbm, ppnbm = 0, 0, 0, 0, 0
-								# if rate > price list rate
 								
-								if i[3] > i[2] :
-
-									harga_satuan = "{0:.5f}".format((i[3]/ppn_pct))
-									harga_total = "{0:.5f}".format(((i[3]*i[5])/ppn_pct))
-									diskon = 0
-								else :
-									harga_satuan = "{0:.5f}".format((i[2]/ppn_pct))
-									harga_total = "{0:.5f}".format(((i[2]*i[5])/ppn_pct))
-									diskon = "{0:.5f}".format((i[7] + i[8]/ppn_pct))
+								harga_satuan = "{0:.0f}".format((i[9] + i[7] + i[8]))
+								harga_total = "{0:.0f}".format((((i[9] + i[7] + i[8])*i[5])))
+								diskon = "{0:.0f}".format((i[7] + i[8]) * i[5])
 
 								jumlah_barang = str(i[5])
 
-								dpp = "{0:.4f}".format((i[6]/ppn_pct))
-								ppn = "{0:.3f}".format(((i[6]/ppn_pct)*10/100))
+								dpp = "{0:.0f}".format((i[6]))
+								ppn = "{0:.0f}".format(((i[6])*tax/100))
 
 								# bagian OF
 								item_list2.append([
@@ -175,9 +184,9 @@ class EFillingTool(Document):
 
 			return item_list2
 
-		elif self.kategori == "Faktur Pajak Retur Masukan" :
+		elif self.kategori == "RETUR PEMBELIAN" :
 			item_list3=[" "]
-			item_list3.append(['RM','NPWP','NAMA', 'KD_JENIS_TRANSAKSI', 'FG_PENGGANTI', 'NOMOR_FAKTUR', 'TANGGAL_FAKTUR', 'IS_CREDITABLE','NO_DOKUMEN_RETUR', 'TANGGAL_RETUR','MASA_PAJAK_RETUR','TAHUN_PAJAK_RETUR',  'NILAI_RETUR_DPP','NILAI_RETUR_PPN','NILAI_RETUR_PPNBM'])
+			item_list3.append(['RM','NPWP','NAMA', 'KD_JENIS_TRANSAKSI', 'FG_PENGGANTI', 'NOMOR_FAKTUR', 'TANGGAL_FAKTUR', 'IS_CREDITABLE','NOMOR_DOKUMEN_RETUR', 'TANGGAL_RETUR','MASA_PAJAK_RETUR','TAHUN_PAJAK_RETUR',  'NILAI_RETUR_DPP','NILAI_RETUR_PPN','NILAI_RETUR_PPNBM'])
 			
 			check = 0 
 			for i in self.get_data_retur_masukan :
@@ -191,9 +200,9 @@ class EFillingTool(Document):
 
 			return item_list3
 
-		elif self.kategori == "Faktur Pajak Retur Keluaran" :
+		elif self.kategori == "RETUR PENJUALAN" :
 			item_list4=[" "]
-			item_list4.append(['RK','NPWP','NAMA', 'KD_JENIS_TRANSAKSI', 'FG_PENGGANTI', 'NOMOR_FAKTUR', 'TANGGAL_FAKTUR','NO_DOKUMEN_RETUR', 'TANGGAL_RETUR','MASA_PAJAK_RETUR','TAHUN_PAJAK_RETUR',  'NILAI_RETUR_DPP','NILAI_RETUR_PPN','NILAI_RETUR_PPNBM'])
+			item_list4.append(['RK','NPWP','NAMA', 'KD_JENIS_TRANSAKSI', 'FG_PENGGANTI', 'NOMOR_FAKTUR', 'TANGGAL_FAKTUR','NOMOR_DOKUMEN_RETUR', 'TANGGAL_RETUR','MASA_PAJAK_RETUR','TAHUN_PAJAK_RETUR',  'NILAI_RETUR_DPP','NILAI_RETUR_PPN','NILAI_RETUR_PPNBM'])
 			
 			check = 0 
 			for i in self.get_data_retur_keluaran :
@@ -211,14 +220,14 @@ class EFillingTool(Document):
 	def get_data(self):
 		
 		if self.date_from and self.date_to :
-			if self.kategori == "Faktur Pajak Masukan" :
+			if self.kategori == "PEMBELIAN" :
 
 				self.set('get_data_pajak_masukan', [])
 				data_pajak_masukan = frappe.db.sql("""  
 					select 
-					MONTH(pm.`tax_date`),
-					YEAR(pm.`tax_date`),
-					DATE_FORMAT(pm.`tax_date`,'%d/%m/%Y'),
+					MONTH(IFNULL(pm.`tax_date`,pm.posting_date)),
+					YEAR(IFNULL(pm.`tax_date`,pm.posting_date)),
+					DATE_FORMAT((IFNULL(pm.`tax_date`,pm.posting_date)),'%d/%m/%Y'),
 					pm.`net_total`,
 					pm.`total_taxes_and_charges`,
 					pm.`name`,
@@ -246,11 +255,16 @@ class EFillingTool(Document):
 						pi.jumlah_ppnbm = '0'
 						pi.is_creditable = '1'
 						hoho = frappe.get_doc("Purchase Invoice",pi.referensi)
-						hasil = frappe.get_doc("Supplier",hoho.supplier).no_npwp
-						pi.npwp = re.sub('[^0-9]','', hasil)
+						hasil = frappe.get_doc("Supplier",hoho.supplier).npwp
+						if hasil:
+							pi.npwp = re.sub('[^0-9]','', hasil)
+						else:
+							pi.npwp = npwp = "000000000000000"
+
 						kdjenistransaksi = frappe.get_doc("Supplier",hoho.supplier).nomor_awalan_pajak
 						pi.kd_jenis_transaksi = kdjenistransaksi
-						pi.nomor_faktur =  re.sub('[^0-9]','', str(hoho.faktur_pajak))
+						if hoho.faktur_pajak:
+							pi.nomor_faktur =  re.sub('[^0-9]','', str(hoho.faktur_pajak))
 						pi.faktur_export = pi.nomor_faktur
 						nofak = pi.nomor_faktur
 						
@@ -265,17 +279,20 @@ class EFillingTool(Document):
 				self.set('get_data_pajak_keluaran', [])
 				data_pajak_keluaran = frappe.db.sql(""" 
 					select
-					MONTH(pm.`tax_date`),
-					YEAR(pm.`tax_date`),
-					DATE_FORMAT(pm.`tax_date`,'%d/%m/%Y'),
+					MONTH((IFNULL(pm.`tax_date`,pm.posting_date))),
+
+					YEAR((IFNULL(pm.`tax_date`,pm.posting_date))),
+					DATE_FORMAT((IFNULL(pm.`tax_date`,pm.posting_date)),'%d/%m/%Y'),
 					pm.`net_total`,
 					pm.`total_taxes_and_charges`,
 					pm.`name` as sinv_name,
+
 					REPLACE(REPLACE(cus.alamat_pajak, '<br>', ' '),'-',' '),
 					REPLACE(REPLACE(cus.nama_pajak, '<br>', ' '),'-',' '),
 					REPLACE(REPLACE(REPLACE(cus.tax_id, '.', ''),'-',' '),' ',''),
 					cus.`nomor_awalan_pajak`,
 					cus.no_ktp,
+
 					cus.tax_id,
 					pm.dp_or_not,
 					pm.nilai_invoice_dp
@@ -295,6 +312,18 @@ class EFillingTool(Document):
 						total_dpp = 0
 						total_ppn = 0
 
+						ambil_rate = frappe.db.sql(""" 
+
+							SELECT stt.name, stt.rate FROM `tabSales Taxes and Charges` stt
+							WHERE stt.`parent` = "{}"
+							AND stt.`rate` > 0
+
+						""".format(a[5]),as_list=1)
+
+						tax = 10
+						if ambil_rate:
+							tax = ambil_rate[0][1]
+
 						# cek included in basic rate or not
 						cek_included = frappe.db.sql(""" 
 
@@ -305,6 +334,7 @@ class EFillingTool(Document):
 						""".format(a[5]),as_list=1)
 
 
+
 						if cek_included :
 							
 							anak = frappe.db.sql("""
@@ -313,9 +343,10 @@ class EFillingTool(Document):
 								sinvi.`item_name`,
 								ifnull(sinvi.`price_list_rate`,0) as price_list_rate,
 								ifnull(sinvi.`rate`, 0) as rate,
-								((sinvi.`price_list_rate` - sinvi.`rate`) * sinvi.`qty`) as discount,
+								IFNULL(sinvi.discount_amount,0) * sinvi.qty as discount,
 								sinvi.`qty`,
-								sinvi.`amount` as amount
+								sinvi.`net_amount` as amount,
+								IFNULL(sinvi.prorate_discount,0) * sinvi.qty as discount_2
 
 								FROM `tabSales Invoice Item` sinvi
 								WHERE sinvi.`parent` = "{}" 
@@ -323,8 +354,8 @@ class EFillingTool(Document):
 
 							if anak :
 								for i in anak :
-									total_dpp += float("{0:.4f}".format((i[6]*10/11)))
-									total_ppn += float("{0:.3f}".format(((i[6]*10/11)*10/100)))
+									total_dpp += float("{0:.0f}".format((i[6])))
+									total_ppn += float("{0:.0f}".format(((i[6])*tax/100)))
 
 						else :
 
@@ -334,9 +365,10 @@ class EFillingTool(Document):
 								sinvi.`item_name`,
 								ifnull(sinvi.`price_list_rate`,0) as price_list_rate,
 								ifnull(sinvi.`rate`, 0) as rate,
-								((sinvi.`price_list_rate` - sinvi.`rate`) * sinvi.`qty`) as discount,
+								IFNULL(sinvi.discount_amount,0) * sinvi.qty as discount,
 								sinvi.`qty`,
-								sinvi.`amount` as amount
+								sinvi.`net_amount` as amount,
+								IFNULL(sinvi.prorate_discount,0) * sinvi.qty as discount_2
 
 								FROM `tabSales Invoice Item` sinvi
 								WHERE sinvi.`parent` = "{}" 
@@ -344,30 +376,36 @@ class EFillingTool(Document):
 
 							if anak :
 								for i in anak :
-									total_dpp += float("{0:.4f}".format((i[6])))
-									total_ppn += float("{0:.3f}".format(((i[6]*10/100))))
+									total_dpp += float("{0:.0f}".format((i[6])))
+									total_ppn += float("{0:.0f}".format(((i[6]*tax/100))))
 
 
 						awalan = ""
 						if a[11]:
-							awalan = a[11]
+							awalan = re.sub('[^0-9]','', a[11])
 						elif a[10]:
-							awalan = a[10]
+							awalan = re.sub('[^0-9]','', a[10])
 
 						nama = ""
-						if awalan:
+						if awalan and a[10]:
 							nama = "{}#NIK#NAMA#{}".format(awalan, a[7])
+						else:
+							nama = a[7]
+
+						npwp = "000000000000000"
+						if a[8]:
+							npwp = re.sub('[^0-9]','', a[8])
 
 						pk = self.append('get_data_pajak_keluaran', {})
 						pk.masa_pajak				= a[0]
 						pk.tahun_pajak				= a[1]
 						pk.tanggal_faktur			= a[2]
-						pk.jumlah_dpp				= str(total_dpp)
-						pk.jumlah_ppn				= str(total_ppn)
+						pk.jumlah_dpp				= str(round(total_dpp))
+						pk.jumlah_ppn				= str(round(total_ppn))
 						pk.referensi				= a[5]
 						pk.alamat_lengkap			= a[6]
-						pk.nama					= a[7]
-						pk.npwp					= a[8]
+						pk.nama					= nama
+						pk.npwp					= npwp
 						pk.kd_jenis_transaksi		= a[9]
 						pk.fk = "FK"
 						pk.fg_pengganti = '0'
@@ -378,25 +416,27 @@ class EFillingTool(Document):
 						else:
 							pk.fg_uang_muka = '0'
 
-						pk.uang_muka_dpp = flt(a[3]) - flt(a[13])
-						pk.uang_muka_ppn = pk.uang_muka_dpp * 10 / 100
+						pk.uang_muka_dpp = float("{0:.0f}".format(flt(a[13]) * (100-tax) / 100))
+						pk.uang_muka_ppn = float("{0:.0f}".format(pk.uang_muka_dpp * tax / 100))
 						pk.uang_muka_ppnbm = '0'
 						hoho = frappe.get_doc("Sales Invoice",pk.referensi)
-						pk.nomor_faktur =  re.sub('[^0-9]','', str(hoho.faktur_pajak))
+						if hoho.faktur_pajak:
+							pk.nomor_faktur =  re.sub('[^0-9]','', str(hoho.faktur_pajak))
+
 						pk.faktur_export = pk.nomor_faktur
 						nofak = pk.nomor_faktur
 				else :
 					frappe.throw("Data tidak ditemukan")	
 
-			elif self.kategori == "Faktur Pajak Retur Masukan" :
+			elif self.kategori == "RETUR PEMBELIAN" :
 				self.set('get_data_retur_masukan', [])
 				data_retur_masukan = frappe.db.sql("""  
 					select 
-					DATE_FORMAT(pm.`tax_date`,'%d/%m/%Y'),
+					DATE_FORMAT((IFNULL(pm.`tax_date`,pm.posting_date)),'%d/%m/%Y'),
 					pm.`name`,
 					DATE_FORMAT(pm.`posting_date`,'%d/%m/%Y'),
-					MONTH(pm.`tax_date`),
-					YEAR(pm.`tax_date`),
+					MONTH((IFNULL(pm.`tax_date`,pm.posting_date))),
+					YEAR((IFNULL(pm.`tax_date`,pm.posting_date))),
 					pm.`net_total`,
 					pm.`total_taxes_and_charges`,
 					pm.`name`,
@@ -424,25 +464,26 @@ class EFillingTool(Document):
 						pi.nilai_retur_ppnbm = '0'
 						pi.is_creditable = '1'
 						hoho = frappe.get_doc("Purchase Invoice",pi.referensi)
-						hasil = frappe.get_doc("Supplier",hoho.supplier).no_npwp
-						pi.npwp = re.sub('[^0-9]','', hasil)
+						hasil = frappe.get_doc("Supplier",hoho.supplier).npwp
+						pi.npwp = hasil
 						kdjenistransaksi = frappe.get_doc("Supplier",hoho.supplier).nomor_awalan_pajak
 						pi.kd_jenis_transaksi = kdjenistransaksi
-						pi.nomor_faktur =  re.sub('[^0-9]','', str(hoho.faktur_pajak))
+						if hoho.faktur_pajak:
+							pi.nomor_faktur =  re.sub('[^0-9]','', str(hoho.faktur_pajak))
 						pi.faktur_export = pi.nomor_faktur
 						nofak = pi.nomor_faktur
 				else :
 					frappe.throw("Data tidak ditemukan")
 					
-			elif self.kategori == "Faktur Pajak Retur Keluaran" :
+			elif self.kategori == "RETUR PENJUALAN" :
 				self.set('get_data_retur_keluaran', [])
 				data_retur_keluaran = frappe.db.sql(""" 
 					select
-					DATE_FORMAT(pm.`tax_date`,'%d/%m/%Y'),
+					DATE_FORMAT((IFNULL(pm.`tax_date`,pm.posting_date)),'%d/%m/%Y'),
 					pm.`name`,
 					DATE_FORMAT(pm.`posting_date`,'%d/%m/%Y'),
-					MONTH(pm.`tax_date`),
-					YEAR(pm.`tax_date`),
+					MONTH((IFNULL(pm.`tax_date`,pm.posting_date))),
+					YEAR((IFNULL(pm.`tax_date`,pm.posting_date))),
 					pm.`net_total`,
 					pm.`total_taxes_and_charges`,
 					pm.`name`,
@@ -473,10 +514,12 @@ class EFillingTool(Document):
 						pk.nilai_retur_ppnbm = '0'
 						hoho = frappe.get_doc("Sales Invoice",pk.referensi)
 						hasil = frappe.get_doc("Customer",hoho.customer).tax_id
-						pk.npwp = re.sub('[^0-9]','', hasil)
+						if hasil:
+							pk.npwp = re.sub('[^0-9]','', hasil)
 						kdjenistransaksi = frappe.get_doc("Customer",hoho.customer).nomor_awalan_pajak
 						pk.kd_jenis_transaksi = kdjenistransaksi
-						pk.nomor_faktur =  re.sub('[^0-9]','', str(hoho.faktur_pajak))
+						if hoho.faktur_pajak:
+							pk.nomor_faktur =  re.sub('[^0-9]','', str(hoho.faktur_pajak))
 						pk.faktur_export = pk.nomor_faktur
 						nofak = pk.nomor_faktur
 						
@@ -492,7 +535,7 @@ class EFillingTool(Document):
 
 	@frappe.whitelist()
 	def checkall(self) :
-		if self.kategori == "Faktur Pajak Masukan" :
+		if self.kategori == "PEMBELIAN" :
 		
 			for d in self.get_data_pajak_masukan :	
 					d.check=1
@@ -503,20 +546,20 @@ class EFillingTool(Document):
 					d.check=1
 
 
-		elif self.kategori == "Faktur Pajak Retur Masukan" :
+		elif self.kategori == "RETUR PEMBELIAN" :
 		
 			for d in self.get_data_retur_masukan :
 					d.check=1
 
 
-		elif self.kategori == "Faktur Pajak Retur Keluaran" :
+		elif self.kategori == "RETUR PENJUALAN" :
 	
 			for d in self.get_data_retur_keluaran :
 					d.check=1
 
 	@frappe.whitelist()
 	def uncheckall(self) :
-		if self.kategori == "Faktur Pajak Masukan" :
+		if self.kategori == "PEMBELIAN" :
 		
 			for d in self.get_data_pajak_masukan :	
 					d.check=0
@@ -527,26 +570,26 @@ class EFillingTool(Document):
 					d.check=0
 
 
-		elif self.kategori == "Faktur Pajak Retur Masukan" :
+		elif self.kategori == "RETUR PEMBELIAN" :
 		
 			for d in self.get_data_retur_masukan :
 					d.check=0
 
 
-		elif self.kategori == "Faktur Pajak Retur Keluaran" :
+		elif self.kategori == "RETUR PENJUALAN" :
 	
 			for d in self.get_data_retur_keluaran :
 					d.check=0
 
 
 	def validate(self):
-		if self.kategori == "Faktur Pajak Masukan" or self.kategori == "Faktur Pajak Retur Masukan" :
+		if self.kategori == "PEMBELIAN" or self.kategori == "RETUR PEMBELIAN" :
 			self.check_nomorfaktur()
 	
 
 	def check_nomorfaktur(self) :
 		
-		if self.kategori == "Faktur Pajak Masukan" :
+		if self.kategori == "PEMBELIAN" :
 
 			exc_list = []
 			text = ""
@@ -572,7 +615,7 @@ class EFillingTool(Document):
 				frappe.msgprint(("{0}").format(text))
 
 
-		elif self.kategori == "Faktur Pajak Retur Masukan" :
+		elif self.kategori == "RETUR PEMBELIAN" :
 
 			exc_list = []
 			text = ""
